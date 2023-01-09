@@ -1,7 +1,7 @@
 script_name="@TRAMBO: Aegisub2Staxrip"
 script_description="Import working Aegisub files to StaxRip"
 script_author="TRAMBO"
-script_version="1.0"
+script_version="1.1" --fix command so it can navigate to other disks
 
 -- Staxrip folder contains StaxRip.exe, Apps, Settings,...
 -- For example: 
@@ -21,7 +21,7 @@ function main(sub, sel, act)
   subtitles = ADP("?script") .. "\\" .. aegisub.file_name();
   bat = trambo .. [[\Aegisub2Staxrip.bat]]
   f = io.open(bat,"w")
-  s = sf("cd %s",staxrip_path)
+  s = sf("cd /d %s",staxrip_path)
   f:write(s)
   f:write("\n")
   s = sf([[StaxRip "%s" -AddFilter:true,"Aegisub2Staxrip","Subtitles","LoadPlugin(\"%s\") TextSubMod(\"%s\")"]],video,"%%app:VSFilterMod%%",subtitles)
@@ -78,15 +78,35 @@ function get_staxrip_path(mode)
   return res.path
 end
 
+function found_folder(folder_path)
+  local f = io.open(folder_path .. [[\trambo_test.txt]],"w")
+  if f ~= nil then
+    f:close()
+    os.remove(folder_path .. [[\trambo_test.txt]],"w")
+    return true
+  else
+    return false
+  end
+end
+
+function check_folder(path)
+  if not found_folder(path) then
+    os.execute("mkdir " .. path)
+  end
+end
+
 function found(file)
-  local res, err, code = os.rename(file, file)
-  return res
+  local f = io.open(file,"r")
+  if f ~= nil then 
+    f:close()
+    return true
+  else
+    return false
+  end
 end
 
 function check_path()
-  if not found(trambo) then
-    os.execute("mkdir -p " .. trambo)
-  end
+  check_folder(trambo)
   staxrip_path = ""
   f=io.open(path_file,"r") 
   if f==nil then 
